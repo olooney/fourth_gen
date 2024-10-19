@@ -161,6 +161,47 @@ writing the function, but do not provide any explanation or examples after
 the function.
 """
 
+HANDLE_ERROR_TEMPLATE = """
+This function:
+
+```python
+{spec}
+```
+
+Was called with these arguments:
+
+```python
+{call}
+```
+
+Which raised this exception:
+
+    {error}
+
+Use your best judgment to return a JSON object which best
+matches the type and correct value based on your understanding
+of what the function was intended to do and what the user
+meant by the arguments that were passed in. 
+
+For example, if the function add(7, "5") raised a TypeError,
+we can guess the user meant to pass add(7, 5) to obtain 12.
+
+Return your answer in one of these JSON formats. If you
+can infer a return value, use:
+
+{{ "return_value": "result" }}
+
+This should be your preferred option if you can reasonably
+infer a return value.
+
+If you feel the error was correct and unavoidable because
+there simply isn't enough information to infer correct 
+behavior, use:
+
+{{ "error": "message" }}
+
+"""
+
 UNIT_TEST_TEMPLATE = """
 Write a pytest style unit test function:
 
@@ -387,6 +428,42 @@ class CodingAssistant:
 
     # convenience function to use the CodeAssistant itself as the decorator
     __call__ = write
+
+    def handle_error(self, f: Callable) -> Callable:
+        """
+        Decorator which adds flexible error handling to any function. If
+        an exception is thrown, the `CodingAssistant` will handle the 
+        function call instead, taking in to account the arguments and error
+        message.
+        """
+        name = f.__name__
+        if hasattr(f, "__fourth_gen_code__"):
+            spec = f.__fourth_gen_code__
+        else:
+            spec = format_function_spec(f)
+        
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except Exception as e:
+                error = repr(e)
+
+                # have the LLM handle the error
+                call = format_function_call(name, args, kwargs)
+                prompt = HANDLE_ERROR_TEMPLATE.format(
+                    spec=spec,
+                    call=call,
+                    error=repr(e),
+                )
+    
+                fix = self.task(prompt, json=True)
+                if "return_value" in fix:
+                    return fix["return_value"]
+                else:
+                    raise
+                    
+        return wrapper
 
     def write_unit_test(self, f: Callable) -> Callable:
         """

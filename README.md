@@ -1,14 +1,18 @@
-
 # Fourth Gen
 
-Fourth Gen is a Python-based tool designed to enhance software development by automating code generation, testing, and integration with OpenAI's language models. This tool facilitates the use of large language models (LLMs) to generate, review, and test Python code dynamically.
+The dream of fourth generation programming languages was to have a programming language
+that felt more like natural language and were thus simultaneously powerful and flexible
+than third generation languages, while being so easy to use that even non-programmers
+could use them. In brief, the computer on Star Trek.
 
-## Features
+`fourth_gen` is a Python package that makes that dream a reality. Now, thanks to the
+power of LLMs, you can specify function behavior in plain English, without ever having
+to write a single line of code. Not only that, but the generated code is capable of
+handling novel or unexpected cases, by delegating to LLMs as needed to cover cases which
+are too vague or require too much judgement to implement as a rigid algorithm.
 
-- **Dynamic Code Generation**: Automatically writes Python code based on function specifications.
-- **Automated Testing**: Generates and runs unit tests for Python functions.
-- **Intelligent Code Reviews**: Uses AI to suggest code improvements and best practices.
-- **Flexible Integration**: Adapts to both simple scripts and complex systems seamlessly.
+This paradigm allows the rapid development of powerful programs that combine
+the performance of traditional computing paradigms with the flexibility of LLMs.
 
 ## Installation
 
@@ -98,7 +102,42 @@ g4.usage
 
 Finally, you can always just `.chat()` with the `CodingAssistant` (which has
 a session history) or use `.task()` to ask it to do an isolated, one-time
-task (which neither loads nor adds to session history.)
+task (which neither loads nor adds to session history.) These features can
+be used interactively during development, or used in the program itself.
+
+```python
+[ g4.task(f"Is this tweet rude? {tweet}") for tweet in twitter_feed ]
+```
+It's also possible to have the `CodingAssistant` handle errors in an intelligent
+way, by having the LLM step in the help when an exception occurs.
+
+```python
+@g4.handle_error
+def capital_of(state: str) -> state:
+    return db.query("SELECT capital FROM states WHERE name = ?", state)[0]["capital"]
+
+    capital_of("Wsiconisn")
+```
+
+    'Madison'
+
+The function succeeds despite the typo because when the database lookup fails,
+the LLM looks at the function call, the function's signature and docstring, and
+the error message, and makes a judgment call about what the return value should
+have been. 
+
+Of course it's possible to chain this together with having `fourth_gen` the
+function for you:
+
+```python
+@g4.handle_error
+@g4.implement
+def fibonacci(n: int) -> int:
+    """A highly performant fibonacci function capable of handling large numbers."""
+```
+
+As long as the function succeeds, there's no performance cost as the LLM is
+never called.
 
 
 ## License
