@@ -106,10 +106,10 @@ task (which neither loads nor adds to session history.) These features can
 be used interactively during development, or used in the program itself.
 
 ```python
-[ g4.task(f"Is this tweet rude? {tweet}") for tweet in twitter_feed ]
+[ g4.task(f"Is this tweet rude? {tweet!r}") for tweet in twitter_feed ]
 ```
 It's also possible to have the `CodingAssistant` handle errors in an intelligent
-way, by having the LLM step in the help when an exception occurs.
+way, by having the LLM step in to help when an exception occurs:
 
 ```python
 @g4.handle_error
