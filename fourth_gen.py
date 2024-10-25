@@ -426,9 +426,6 @@ class CodingAssistant:
         else:
             raise ValueError(f"Unknown process style {style!r}")
 
-    # convenience function to use the CodeAssistant itself as the decorator
-    __call__ = write
-
     def handle_error(self, f: Callable) -> Callable:
         """
         Decorator which adds flexible error handling to any function. If
@@ -464,6 +461,15 @@ class CodingAssistant:
                     raise
                     
         return wrapper
+
+    def __call__(self, f: Callable) -> Callable:
+        """
+        Decorator which wraps an empty function with only a docstring
+        and implements it with `.write()` and adds the `.handle_error()`
+        decorator was well. It's basically a "one stop shop" to fully
+        implement a function.
+        """
+        return self.handle_error(self.write(f))
 
     def write_unit_test(self, f: Callable) -> Callable:
         """

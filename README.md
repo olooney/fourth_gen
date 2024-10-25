@@ -45,18 +45,6 @@ def example_function(x, y):
 result = implemented_function(5, 3)
 ```
 
-### Running Unit Tests
-
-You can also generate and run unit tests automatically:
-
-```python
-# Generate a unit test for the example_function
-test_example_function = assistant.write_unit_test(example_function)
-
-# run the unit test
-test_example_function()
-```
-
 ## Advanced Usage
 
 By default, `fourth_gen` automatically chooses between one of two styles:
@@ -69,7 +57,9 @@ function can actually be implemented in Python or if it needs to leverage an
 LLM to work. For example, if the requirement is vague or involves natural
 language processing, using the LLM is more appropriate.
 
-You can force which approach to use with `.implemnt()` and `.handle()`:
+You can force which approach to use with `@implement` and `@handle`. If
+you want the LLM to handle every function call on a case-by-case basis, you
+can use `@handle`:
 
 ```python
 # always use an LLM to handle the task
@@ -81,9 +71,57 @@ def color_to_hex(color_name: str) -> str:
     isn't recognized, choose a color which matches the emotional
     vibes of the name.
     """
+```
 
-# always generate a Python implementation
+On the other hand, if you want it to call the LLM only once, to generate Python
+code for the function, then use that Python code every time the function is
+called from then on, you can use `@implement`:
+```python
 @g4.implement
+def fibonacci(n: int) -> int:
+    """A highly performant fibonacci function capable of handling large numbers."""
+```
+
+If you want it to automatically decide which of the above approaches to use,
+then just use `@write`:
+
+
+```python
+@g4.write
+def fibonacci(n: int) -> int:
+    """A highly performant fibonacci function capable of handling large numbers."""
+```
+
+The `fourth_gen.CodingAssistant` can also wrap an existing function to handle
+exceptions. The function is called normally, and if it returns a value then 
+that's that; the LLM is not called. However, if the function throws an exception,
+then the LLM will be shown the function, its arguments, and the error message from
+the exception and will be tasked with trying to guess what the "correct" return value
+should be, and that is returned instead. In other words, it implements the language
+feature that programmers have long wished for: "Do what I mean, not what I say."
+
+```python
+@g4.handle_error
+def database_capital_lookup(state: str) -> str:
+    """returns the name of the capital of the given US state."""
+    raise ValueError(f"State {state!r} not found in database table 'state'")
+```
+
+Finally, to have it both implement the function and handle errors, you can
+simply use the `fourth_gen.CodingAssistant` itself as a high-level, all-in-one
+decorator:
+
+```python
+@g4
+def fibonacci(n: int) -> int:
+    """A highly performant fibonacci function capable of handling large numbers."""
+```
+
+This is equivalent to stacking the `@handle_error` and `@write` decorators:
+
+```python
+@g4.handle_error
+@g4.write
 def fibonacci(n: int) -> int:
     """A highly performant fibonacci function capable of handling large numbers."""
 ```
@@ -103,11 +141,12 @@ g4.usage
 Finally, you can always just `.chat()` with the `CodingAssistant` (which has
 a session history) or use `.task()` to ask it to do an isolated, one-time
 task (which neither loads nor adds to session history.) These features can
-be used interactively during development, or used in the program itself.
+be used interactively during development, or used in the program itself:
 
 ```python
 [ g4.task(f"Is this tweet rude? {tweet!r}") for tweet in twitter_feed ]
 ```
+
 It's also possible to have the `CodingAssistant` handle errors in an intelligent
 way, by having the LLM step in to help when an exception occurs:
 
@@ -126,7 +165,7 @@ the LLM looks at the function call, the function's signature and docstring, and
 the error message, and makes a judgment call about what the return value should
 have been. 
 
-Of course it's possible to chain this together with having `fourth_gen` the
+Of course it's possible to chain this together with having `fourth_gen` write the
 function for you:
 
 ```python
