@@ -24,7 +24,7 @@ cd fourth_gen
 pip install -r requirements.txt
 ```
 
-### Basic Usage
+## Basic Usage
 
 Here's how to instantiate a `CodingAssistant` and use it to generate and review code:
 
@@ -46,6 +46,8 @@ result = implemented_function(5, 3)
 ```
 
 ## Advanced Usage
+
+### Rigid vs. Flexible Approach
 
 By default, `fourth_gen` automatically chooses between one of two styles:
 
@@ -100,12 +102,18 @@ the exception and will be tasked with trying to guess what the "correct" return 
 should be, and that is returned instead. In other words, it implements the language
 feature that programmers have long wished for: "Do what I mean, not what I say."
 
+### Error Handling
+
 ```python
 @g4.handle_error
 def database_capital_lookup(state: str) -> str:
     """returns the name of the capital of the given US state."""
     raise ValueError(f"State {state!r} not found in database table 'state'")
+
+capital_of("Wsiconisn")
 ```
+
+    'Madison'
 
 Finally, to have it both implement the function and handle errors, you can
 simply use the `fourth_gen.CodingAssistant` itself as a high-level, all-in-one
@@ -126,6 +134,17 @@ def fibonacci(n: int) -> int:
     """A highly performant fibonacci function capable of handling large numbers."""
 ```
 
+### Interactive Usage
+
+Finally, you can always just `.chat()` with the `CodingAssistant` (which has
+a session history) or use `.task()` to ask it to do an isolated, one-time
+task (which neither loads nor adds to session history.) These features can
+be used interactively during development, or used in the program itself:
+
+```python
+[ g4.task(f"Is this tweet rude? {tweet!r}") for tweet in twitter_feed ]
+```
+
 The `CodingAssistant` also keeps track of its API usage metrics for a given session:
 
 ```python
@@ -138,45 +157,8 @@ g4.usage
      'input_tokens': 4213,
      'cost': 0.016303500000000002}
 
-Finally, you can always just `.chat()` with the `CodingAssistant` (which has
-a session history) or use `.task()` to ask it to do an isolated, one-time
-task (which neither loads nor adds to session history.) These features can
-be used interactively during development, or used in the program itself:
-
-```python
-[ g4.task(f"Is this tweet rude? {tweet!r}") for tweet in twitter_feed ]
-```
-
-It's also possible to have the `CodingAssistant` handle errors in an intelligent
-way, by having the LLM step in to help when an exception occurs:
-
-```python
-@g4.handle_error
-def capital_of(state: str) -> state:
-    return db.query("SELECT capital FROM states WHERE name = ?", state)[0]["capital"]
-
-    capital_of("Wsiconisn")
-```
-
-    'Madison'
-
-The function succeeds despite the typo because when the database lookup fails,
-the LLM looks at the function call, the function's signature and docstring, and
-the error message, and makes a judgment call about what the return value should
-have been. 
-
-Of course it's possible to chain this together with having `fourth_gen` write the
-function for you:
-
-```python
-@g4.handle_error
-@g4.implement
-def fibonacci(n: int) -> int:
-    """A highly performant fibonacci function capable of handling large numbers."""
-```
-
-As long as the function succeeds, there's no performance cost as the LLM is
-never called.
+This is mainly useful for keeping an eye on how much of a bill you're racking
+up with all this LLM magic.
 
 
 ## License
